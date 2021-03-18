@@ -1,0 +1,43 @@
+{
+  "name": "domovoy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "plugins/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "start": "DEBUG=domovoy node ./index.js",
+    "lint": "./node_modules/.bin/eslint index.js plugins"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.7.2",
+    "config": "3.3.6",
+    "debug": "4.3.1",
+    "node-telegram-bot-api": "0.51.0",
+    "ping": "^0.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.22.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-loader": "^4.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-promise": "^4.3.1",
+    "eslint-plugin-standard": "^4.1.0",
+    "husky": "^5.1.3",
+    "lint-staged": "^10.5.4"
+  },
+  "engines": {
+    "node": ">=8"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run lint && npm test"
+    }
+  },
+  "lint-staged": {
+    "*.js": "eslint"
+  },
+  "engineStrict": true
+}
