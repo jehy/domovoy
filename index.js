@@ -7,8 +7,9 @@ const config = require('config');
 const blueBird = require('bluebird');
 const debug = require('debug')('domovoy');
 const devicesAlive = require('./plugins/devicesAlive');
+const temperature = require('./plugins/temperature');
 
-const plugins = {devicesAlive};
+const plugins = {devicesAlive, temperature};
 const pluginsToRun = Object.entries(plugins).filter(([name])=>config[name]);
 
 let messagePool = {};
@@ -65,12 +66,12 @@ async function sendMessageLoop() {
   while (true) {
     await blueBird.delay(10000);
     const text = Object.entries(messagePool).reduce((acc, [pluginName, messages])=>{
-      return acc.concat(`${pluginName}:\n${messages.join('\n')}`);
-    }, []).join('\n');
+      return acc.concat(`*${pluginName}*:\n${messages.join('\n')}`);
+    }, []).join('\n\n');
     messagePool = {};
     if (text) {
       try {
-        await bot.sendMessage(config.telegram.chatId, text);
+        await bot.sendMessage(config.telegram.chatId, text, {parse_mode: 'Markdown'});
       } catch (err) {
         debug(err);
       }

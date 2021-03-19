@@ -13,7 +13,7 @@ function prepareConfig(hostConfig) {
     timeout: 5000,
     // interval: 1000 * 60 * 5,
     interval: 1000,
-    maxDeadCount: 1,
+    maxDeadCount: 2,
   };
   return {...defaults, ...hostConfig};
 }
