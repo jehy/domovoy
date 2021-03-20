@@ -11,7 +11,7 @@ let sendMessage;
 function prepareConfig(hostConfig) {
   const defaults = {
     timeout: 5000,
-    interval: 1000 * 60 * 5,
+    interval: 1000 * 60,
     maxDeadCount: 2,
   };
   return {...defaults, ...hostConfig};

@@ -51,13 +51,14 @@ async function run(config, sendMessageFunc) {
   sendMessage = sendMessageFunc;
   sendMessage('temperature monitor started');
   let lastNotified = 0;
+  let firstLaunch = true;
   while (true) {
     let data;
     try {
       data = await fetchData();
     } catch (err) {
       sendMessage(`Failed to get temperature: ${err.message} ${err.stack}`);
-      await blueBird.delay(1000 * 60 * 60);
+      await blueBird.delay(config.repeatOnError);
       continue;
     }
     statusData = data;
@@ -66,6 +67,10 @@ async function run(config, sendMessageFunc) {
     if (text &&  (now - lastNotified > config.notifyInterval)) {
       lastNotified = now;
       sendMessage(text);
+    }
+    if (firstLaunch) {
+      sendMessage(`First launch: ${JSON.stringify(statusData, null, 2)}`);
+      firstLaunch = false;
     }
     await blueBird.delay(config.interval);
   }

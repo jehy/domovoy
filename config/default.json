@@ -1,4 +1,23 @@
 {
+  "temperature": {
+    "interval": 60000,
+    "notifyInterval": 1200000,
+    "repeatOnError": 12000000,
+    "required": {
+      "ppm": [
+        300,
+        800
+      ],
+      "temp": [
+        18,
+        24
+      ],
+      "humidity": [
+        0,
+        40
+      ]
+    }
+  },
   "devicesAlive": {
     "hosts": [
       {
