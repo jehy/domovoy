@@ -94,7 +94,7 @@ async function sendMessageLoop() {
     if (text) {
       try {
         await bot.sendMessage(config.telegram.chatId, text, {parse_mode: 'Markdown'});
-        messagePool.splice(queueSize);
+        messagePool.splice(0, queueSize);
       } catch (err) {
         debug(err);
       }
