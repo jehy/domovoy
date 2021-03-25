@@ -13,15 +13,15 @@ let sendMessage;
 async function fetchData()
 {
   const requests = stats.map((stat)=>`http://co2.jehy.ru/json.php?stat=${stat}&limit=1`);
-  const reply = await Promise.all(requests.map((request)=>axios(request)));
-  const now = Date.now();
+  const reply = await blueBird.map(requests, (request)=>axios(request), {concurrency: 1});
+  const now = DateTime.now();
   const numbers = reply.map((el, index)=>{
     if (!el.data || !el.data.length) {
       return null;
     }
     const measureTime = DateTime.fromFormat(el.data[0].date, 'yyyy-LL-dd HH:mm');
-    if (now - measureTime.toMillis() > 1000 * 60 * 30) {
-      sendMessage(`Too old data in API, ${measureTime.toISOTime()} vs now (${now})`);
+    if (now.diff(measureTime) > 1000 * 60 * 30) {
+      sendMessage(`Too old data in API, ${measureTime.toFormat('yyyy-LL-dd HH:mm')} vs now (${now.toFormat('yyyy-LL-dd HH:mm')}})`);
       return null;
     }
     return el.data[0][stats[index]];

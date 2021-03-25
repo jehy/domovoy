@@ -68,7 +68,28 @@ function messageToText(message) {
   return message.text;
 }
 
+function formatPluginMessages(pluginName, messages) {
+  return `*${pluginName}*:\n${messages.map((message)=>messageToText(message)).join('\n')}`;
+}
+
 const queueSize = 10;
+
+function getTextToSend()
+{
+  const firstMessagesByPlugin = messagePool
+    .slice(0, queueSize)
+    .reduce((acc, message)=>{
+      if (!acc[message.plugin]) {
+        acc[message.plugin] = [];
+      }
+      acc[message.plugin].push(message);
+      return acc;
+    }, {});
+  return Object.entries(firstMessagesByPlugin)
+    .reduce((acc, [pluginName, messages])=>{
+      return acc.concat(formatPluginMessages(pluginName, messages));
+    }, []).join('\n\n');
+}
 
 async function sendMessageLoop() {
   const bot = makeBot();
@@ -78,19 +99,7 @@ async function sendMessageLoop() {
       debug(`Omg, too many messages! (${messagePool.length})`);
       messagePool.length = 100;
     }
-    const firstMessagesByPlugin = messagePool
-      .slice(0, queueSize)
-      .reduce((acc, message)=>{
-        if (!acc[message.plugin]) {
-          acc[message.plugin] = [];
-        }
-        acc[message.plugin].push(message);
-        return acc;
-      }, {});
-    const text = Object.entries(firstMessagesByPlugin)
-      .reduce((acc, [pluginName, messages])=>{
-        return acc.concat(`*${pluginName}*:\n${messages.map((message)=>messageToText(message)).join('\n')}`);
-      }, []).join('\n\n');
+    const text = getTextToSend();
     if (text) {
       try {
         await bot.sendMessage(config.telegram.chatId, text, {parse_mode: 'Markdown'});
