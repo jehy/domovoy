@@ -78,7 +78,7 @@ async function sendMessageLoop() {
       debug(`Omg, too many messages! (${messagePool.length})`);
       messagePool.length = 100;
     }
-    const text = messagePool
+    const firstMessagesByPlugin = messagePool
       .slice(0, queueSize)
       .reduce((acc, message)=>{
         if (!acc[message.plugin]) {
@@ -86,7 +86,8 @@ async function sendMessageLoop() {
         }
         acc[message.plugin].push(message);
         return acc;
-      }, {})
+      }, {});
+    const text = Object.entries(firstMessagesByPlugin)
       .reduce((acc, [pluginName, messages])=>{
         return acc.concat(`*${pluginName}*:\n${messages.map((message)=>messageToText(message)).join('\n')}`);
       }, []).join('\n\n');
