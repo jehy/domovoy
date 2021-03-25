@@ -6,13 +6,14 @@ const TelegramBot = require('node-telegram-bot-api');
 const config = require('config');
 const blueBird = require('bluebird');
 const debug = require('debug')('domovoy');
+const {DateTime} = require('luxon');
 const devicesAlive = require('./plugins/devicesAlive');
 const temperature = require('./plugins/temperature');
 
 const plugins = {devicesAlive, temperature};
 const pluginsToRun = Object.entries(plugins).filter(([name])=>config[name]);
 
-let messagePool = {};
+const messagePool = [];
 
 function makeBot() {
   const bot = new TelegramBot(config.telegram.token, {polling: true});
@@ -54,24 +55,45 @@ function makeBot() {
   return bot;
 }
 
-function sendMessage(botName, text) {
-  if (!messagePool[botName]) {
-    messagePool[botName] = [];
-  }
-  messagePool[botName].push(text);
+function sendMessage(plugin, text) {
+  messagePool.push({plugin, text, date: DateTime.now()});
 }
+
+function messageToText(message) {
+  const date =  DateTime.now();
+  if (date.diff(message.date) > 60 * 1000) {
+    // for messages which waited for too long we will add timestamp
+    return `${date.toFormat('yyyy-LL-dd HH:mm')} ${message.text}`;
+  }
+  return message.text;
+}
+
+const queueSize = 10;
 
 async function sendMessageLoop() {
   const bot = makeBot();
   while (true) {
     await blueBird.delay(10000);
-    const text = Object.entries(messagePool).reduce((acc, [pluginName, messages])=>{
-      return acc.concat(`*${pluginName}*:\n${messages.join('\n')}`);
-    }, []).join('\n\n');
-    messagePool = {};
+    if (messagePool.length > 1000) {
+      debug(`Omg, too many messages! (${messagePool.length})`);
+      messagePool.length = 100;
+    }
+    const text = messagePool
+      .slice(0, queueSize)
+      .reduce((acc, message)=>{
+        if (!acc[message.plugin]) {
+          acc[message.plugin] = [];
+        }
+        acc[message.plugin].push(message);
+        return acc;
+      }, {})
+      .reduce((acc, [pluginName, messages])=>{
+        return acc.concat(`*${pluginName}*:\n${messages.map((message)=>messageToText(message)).join('\n')}`);
+      }, []).join('\n\n');
     if (text) {
       try {
         await bot.sendMessage(config.telegram.chatId, text, {parse_mode: 'Markdown'});
+        messagePool.splice(queueSize);
       } catch (err) {
         debug(err);
       }
