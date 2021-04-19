@@ -64,7 +64,7 @@ function makeBot() {
     });
   });
   bot.onText(/\/status/, async (msg) => {
-    debug(`${msg} message from user`);
+    debug('status message from user');
     if (!isAdminUser(msg, bot)) {
       return;
     }
@@ -72,7 +72,7 @@ function makeBot() {
     await Promise.all(pluginsStatus);
   });
   bot.onText(/\/update/, async (msg) => {
-    debug(`${msg} message from user`);
+    debug('update message from user');
     if (!isAdminUser(msg, bot)) {
       return;
     }
