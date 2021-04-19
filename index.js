@@ -7,13 +7,39 @@ const config = require('config');
 const blueBird = require('bluebird');
 const debug = require('debug')('domovoy');
 const {DateTime} = require('luxon');
+const {exec} =  require('child_process');
+const util = require('util');
 const devicesAlive = require('./plugins/devicesAlive');
 const temperature = require('./plugins/temperature');
+
+async function execAsync(command) {
+  debug(`Running console command: ${command}`);
+  const {stdout, stderr} = await util.promisify(exec)(command);
+  debug(`STDERR:\n${stderr}\n\nSTDOUT:${stdout}`);
+  if (stdout) {
+    return stdout.trim();
+  }
+  return `STDERR:\n${stderr}\n\nSTDOUT:${stdout}`;
+}
 
 const plugins = {devicesAlive, temperature};
 const pluginsToRun = Object.entries(plugins).filter(([name])=>config[name]);
 
 const messagePool = [];
+
+function isAdminUser(msg, bot) {
+  const chatId = msg.chat.id || msg.from.id;
+  debug(`chatId: ${chatId}`);
+  if (config.telegram.chatId === chatId) {
+    return true;
+  }
+  bot.sendMessage(chatId, 'Sorry, Mario, your princess is another castle!', {
+    reply_markup: JSON.stringify({
+      remove_keyboard: true,
+    }),
+  }).catch((err)=>debug(err));
+  return false;
+}
 
 function makeBot() {
   const bot = new TelegramBot(config.telegram.token, {polling: true});
@@ -38,19 +64,19 @@ function makeBot() {
     });
   });
   bot.onText(/\/status/, async (msg) => {
-    debug('status message from user');
-    const chatId = msg.chat.id || msg.from.id;
-    debug(`chatId: ${chatId}`);
-    if (config.telegram.chatId !== chatId) {
-      await bot.sendMessage(chatId, 'Sorry, Mario, your princess is another castle!', {
-        reply_markup: JSON.stringify({
-          remove_keyboard: true,
-        }),
-      });
+    debug(`${msg} message from user`);
+    if (!isAdminUser(msg, bot)) {
       return;
     }
     const pluginsStatus = pluginsToRun.map(([name, module])=>module.status());
     await Promise.all(pluginsStatus);
+  });
+  bot.onText(/\/update/, async (msg) => {
+    debug(`${msg} message from user`);
+    if (!isAdminUser(msg, bot)) {
+      return;
+    }
+    await execAsync('git pull origin master && pm2 restart all');
   });
   return bot;
 }
